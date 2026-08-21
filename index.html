@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Databas → Excel</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="hero">
+      <div class="logo-card" aria-hidden="true">
+        <span class="logo-main">DB</span>
+        <span class="logo-sub">XLSX</span>
+      </div>
+      <div>
+        <h1>Databas <span>→ Excel</span></h1>
+        <p>Konvertera SQLite/DB3 och Access/PEX direkt i webbläsaren.</p>
+      </div>
+    </header>
+
+    <section class="privacy-banner" aria-label="Sekretessinformation">
+      <div class="privacy-dot"></div>
+      <div>
+        <strong>Filen lämnar inte din dator</strong>
+        <p>Databasen läses lokalt i webbläsaren. Ingen databasfil laddas upp till någon server.</p>
+      </div>
+    </section>
+
+    <section class="card file-card">
+      <div class="file-badge" id="fileBadge">DB</div>
+      <div class="file-meta">
+        <span class="eyebrow">Databasfil</span>
+        <strong id="fileName">Ingen fil vald</strong>
+        <span id="dbType">Databastyp: inte identifierad</span>
+        <small id="fileInfo">Välj .db3, .sqlite, .sqlite3, .mdb eller .accdb.</small>
+      </div>
+      <button id="chooseButton" class="button secondary" type="button">Välj databasfil</button>
+      <input id="fileInput" type="file" accept=".db3,.sqlite,.sqlite3,.mdb,.accdb" hidden>
+    </section>
+
+    <section class="actions">
+      <button id="convertButton" class="button primary" type="button" disabled>Konvertera till Excel</button>
+      <button id="resetButton" class="button secondary" type="button" disabled>Ny fil</button>
+    </section>
+
+    <section class="status-section" aria-live="polite">
+      <div class="status-heading">
+        <div>
+          <span class="eyebrow">Status</span>
+          <strong id="statusText">Initierar Python-miljön…</strong>
+        </div>
+        <strong id="percentText">0%</strong>
+      </div>
+      <div class="progress-track" aria-hidden="true">
+        <div id="progressBar" class="progress-bar"></div>
+      </div>
+      <p id="detailText" class="detail"></p>
+    </section>
+
+    <section id="resultCard" class="result-card" hidden>
+      <div class="check">✓</div>
+      <div>
+        <h2>Export klar!</h2>
+        <p id="resultSummary"></p>
+        <p id="resultFile" class="result-file"></p>
+        <p id="resultDetail" class="result-detail"></p>
+        <button id="downloadButton" class="button success" type="button">Hämta Excel-filen</button>
+      </div>
+    </section>
+
+    <details class="log-panel">
+      <summary>Teknisk logg</summary>
+      <pre id="logOutput"></pre>
+    </details>
+
+    <footer>
+      <span id="footerStatus" class="ready-dot">● Redo</span>
+      <span>Pyodide + sqlite3 / access-parser + openpyxl</span>
+    </footer>
+  </main>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
