@@ -1,0 +1,93 @@
+name: Build and deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Assemble compact static site
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p _site/runtime/pyodide _build/pyodide _build/site-packages
+
+          rsync -a ./ _site/ \
+            --exclude .git \
+            --exclude .github \
+            --exclude _site \
+            --exclude _build
+
+          curl -L --fail --retry 3 \
+            -o _build/pyodide-core.tar.bz2 \
+            https://github.com/pyodide/pyodide/releases/download/314.0.4/pyodide-core-314.0.4.tar.bz2
+
+          tar -xjf _build/pyodide-core.tar.bz2 -C _build/pyodide
+
+          for file in pyodide.js pyodide.mjs pyodide.asm.mjs pyodide.asm.wasm python_stdlib.zip pyodide-lock.json; do
+            found=$(find _build/pyodide -type f -name "$file" -print -quit)
+            test -n "$found"
+            cp "$found" "_site/runtime/pyodide/$file"
+          done
+
+          python -m pip install --disable-pip-version-check --no-compile \
+            --target _build/site-packages \
+            openpyxl==3.1.5 \
+            et-xmlfile==2.0.0 \
+            construct==2.10.70 \
+            tabulate==0.10.0 \
+            access-parser==0.0.6
+
+          find _build/site-packages -type d -name '__pycache__' -prune -exec rm -rf {} +
+          find _build/site-packages -type d -name '*.dist-info' -prune -exec rm -rf {} +
+          find _build/site-packages -type d -name '*.egg-info' -prune -exec rm -rf {} +
+
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+          source = Path('_build/site-packages')
+          target = Path('_site/runtime/python-packages.zip')
+          with zipfile.ZipFile(target, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+              for p in source.rglob('*'):
+                  if p.is_file():
+                      z.write(p, p.relative_to(source))
+          PY
+
+          echo 'Deployed sizes:'
+          du -h _site/runtime/pyodide/* _site/runtime/python-packages.zip
+          du -sh _site
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
