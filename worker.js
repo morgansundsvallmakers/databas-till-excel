@@ -1,4 +1,4 @@
-const PYODIDE_VERSION = "314.0.4";
+const PYODIDE_VERSION = "314.0.3";
 const PYODIDE_BASE = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 const ACCESS_PARSER_COMMIT = "7b733913a7a8076bfd289130a9f6113002059fe0";
 const ACCESS_FILES = ["__init__.py", "access_parser.py", "parsing_primitives.py", "utils.py"];
