@@ -44,6 +44,7 @@ button { font: inherit; }
 .progress-bar { height:100%; width:0%; border-radius:inherit; background:#16a34a; transition:width .25s ease; }
 .detail { min-height:20px; color:#667085; font-size:14px; margin:8px 0 0; }
 .result-card { display:grid; grid-template-columns:52px minmax(0,1fr); gap:18px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:18px; padding:20px; margin-top:20px; }
+.result-card[hidden] { display:none; }
 .check { width:52px; height:52px; border-radius:50%; background:#16a34a; color:white; display:grid; place-items:center; font-size:29px; font-weight:800; }
 .result-card h2 { margin:0 0 6px; color:#166534; font-size:20px; }
 .result-card p { margin:4px 0; }
