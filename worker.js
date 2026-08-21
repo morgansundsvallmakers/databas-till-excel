@@ -1,3 +1,5 @@
+import { loadPyodide } from "./runtime/pyodide/pyodide.mjs";
+
 const PYODIDE_BASE = "./runtime/pyodide/";
 
 let pyodide = null;
@@ -18,7 +20,6 @@ async function fetchBinary(url) {
 async function init() {
   try {
     send("log", { message: "Laddar lokal Pyodide-runtime…" });
-    importScripts(`${PYODIDE_BASE}pyodide.js`);
     const indexURL = new URL(PYODIDE_BASE, self.location.href).href;
     pyodide = await loadPyodide({ indexURL });
 
