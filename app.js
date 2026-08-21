@@ -69,7 +69,7 @@ function resetSelection() {
 }
 
 function initWorker() {
-  worker = new Worker(`./worker.js?v=${Date.now()}`);
+  worker = new Worker(`./worker.js?v=${Date.now()}`, { type: "module" });
 
   worker.onmessage = (event) => {
     const data = event.data;
