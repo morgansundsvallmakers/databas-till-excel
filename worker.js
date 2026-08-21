@@ -1,7 +1,4 @@
-const PYODIDE_VERSION = "314.0.3";
-const PYODIDE_BASE = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
-const ACCESS_PARSER_COMMIT = "7b733913a7a8076bfd289130a9f6113002059fe0";
-const ACCESS_FILES = ["__init__.py", "access_parser.py", "parsing_primitives.py", "utils.py"];
+const PYODIDE_BASE = "./runtime/pyodide/";
 
 let pyodide = null;
 let exporter = null;
@@ -12,34 +9,31 @@ function send(type, payload = {}) {
   postMessage({ type, ...payload });
 }
 
+async function fetchBinary(url) {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Kunde inte hämta ${url}: ${response.status}`);
+  return new Uint8Array(await response.arrayBuffer());
+}
+
 async function init() {
   try {
-    send("log", { message: "Laddar Pyodide…" });
+    send("log", { message: "Laddar lokal Pyodide-runtime…" });
     importScripts(`${PYODIDE_BASE}pyodide.js`);
-    pyodide = await loadPyodide({ indexURL: PYODIDE_BASE });
+    const indexURL = new URL(PYODIDE_BASE, self.location.href).href;
+    pyodide = await loadPyodide({ indexURL });
 
-    send("log", { message: "Installerar Python-paket (openpyxl, construct, tabulate)…" });
-    await pyodide.loadPackage("micropip");
-    const micropip = pyodide.pyimport("micropip");
-    await micropip.install(["openpyxl", "construct", "tabulate"]);
-    micropip.destroy();
+    send("log", { message: "Laddar lokala Python-paket…" });
+    pyodide.FS.mkdirTree("/lib/site-packages");
+    const packageArchive = await fetchBinary("./runtime/python-packages.zip");
+    pyodide.unpackArchive(packageArchive, "zip", { extractDir: "/lib/site-packages" });
+    pyodide.runPython('import sys\nsys.path.insert(0, "/lib/site-packages")');
 
-    send("log", { message: "Laddar access-parser (ren Python, pinnad version)…" });
-    pyodide.FS.mkdirTree("/lib/access_parser");
-    for (const file of ACCESS_FILES) {
-      const url = `https://raw.githubusercontent.com/claroty/access_parser/${ACCESS_PARSER_COMMIT}/access_parser/${file}`;
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Kunde inte hämta ${file}: ${response.status}`);
-      pyodide.FS.writeFile(`/lib/access_parser/${file}`, await response.text(), { encoding: "utf8" });
-    }
-
-    pyodide.runPython(`import sys\nsys.path.insert(0, "/lib")`);
-
-    const exporterSource = await fetch("./exporter.py").then(r => {
+    const exporterSource = await fetch("./exporter.py", { cache: "no-store" }).then(r => {
       if (!r.ok) throw new Error(`Kunde inte läsa exporter.py: ${r.status}`);
       return r.text();
     });
     pyodide.FS.writeFile("/lib/exporter.py", exporterSource, { encoding: "utf8" });
+    pyodide.runPython('sys.path.insert(0, "/lib")');
     exporter = pyodide.pyimport("exporter");
 
     pyodide.globals.set("progress_callback", (index, total, table, rows) => {
