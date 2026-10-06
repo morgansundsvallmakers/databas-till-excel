@@ -1,5 +1,7 @@
 # Databas → Excel (webb)
 
+**Öppna webbappen:** https://morgansundsvallmakers.github.io/databas-till-excel/
+
 Statisk webbapp för att exportera:
 
 - SQLite / DB3 (`.db3`, `.sqlite`, `.sqlite3`)
