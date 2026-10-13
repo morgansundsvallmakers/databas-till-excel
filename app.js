@@ -100,7 +100,7 @@ function initWorker() {
     if (data.type === "detected") {
       detected = data.result;
       els.fileBadge.textContent =
-        detected.source === "pex_zip" ? "PEX" :
+        detected.source === "pex_zip" || detected.processed ? "PEX" :
         detected.kind === "sqlite" ? "DB3" : "PEX";
       els.dbType.textContent = `Databastyp: ${detected.label} • lokal läsning`;
 
@@ -150,8 +150,9 @@ function initWorker() {
       });
       excelBlobUrl = URL.createObjectURL(blob);
 
-      els.resultSummary.textContent =
-        `${data.result.tables} tabeller exporterades från ${detected.label}.`;
+      els.resultSummary.textContent = data.result.processed_rows
+        ? `Bearbetat blad "Undersökningar" skapades med ${Number(data.result.processed_rows).toLocaleString("sv-SE")} protokoll. ${data.result.tables} råtabeller finns också kvar.`
+        : `${data.result.tables} tabeller exporterades från ${detected.label}.`;
       els.resultFile.textContent = `Excel-fil: ${data.outputName}`;
       els.resultDetail.textContent =
         `Sista tabell: ${data.result.last_table} • ${Number(data.result.last_rows).toLocaleString("sv-SE")} rader • Tid: ${(data.elapsedMs / 1000).toFixed(1)} s`;
