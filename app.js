@@ -1,4 +1,5 @@
 const els = {
+  dropZone: document.querySelector("#dropZone"),
   chooseButton: document.querySelector("#chooseButton"),
   fileInput: document.querySelector("#fileInput"),
   convertButton: document.querySelector("#convertButton"),
@@ -62,7 +63,7 @@ function resetSelection() {
   els.fileBadge.textContent = "DB";
   els.fileName.textContent = "Ingen fil vald";
   els.dbType.textContent = "Databastyp: inte identifierad";
-  els.fileInfo.textContent = "Välj .db3, .sqlite, .sqlite3, .mdb, .accdb eller PEX-backup (.zip).";
+  els.fileInfo.textContent = "Dra en fil hit eller välj .db3, .sqlite, .sqlite3, .mdb, .accdb eller PEX-backup (.zip).";
   els.convertButton.disabled = true;
   els.resetButton.disabled = true;
   setProgress(0, ready ? "Redo" : "Initierar Python-miljön…");
@@ -187,16 +188,29 @@ initWorker();
 
 els.chooseButton.addEventListener("click", () => els.fileInput.click());
 
-els.fileInput.addEventListener("change", async () => {
-  const file = els.fileInput.files?.[0];
+async function handleSelectedFile(file) {
   if (!file || !ready) return;
+
+  const allowedExtensions = [".db3", ".sqlite", ".sqlite3", ".mdb", ".accdb", ".zip"];
+  const lowerName = file.name.toLowerCase();
+  if (!allowedExtensions.some(ext => lowerName.endsWith(ext))) {
+    detected = null;
+    resetResult();
+    els.convertButton.disabled = true;
+    els.resetButton.disabled = false;
+    setProgress(0, "Filtypen stöds inte");
+    setFooter("error", "Fel");
+    els.detailText.textContent = "Välj en DB3/SQLite-, Access/PEX- eller PEX-backupfil (.zip).";
+    log(`Filtypen stöds inte: ${file.name}`);
+    return;
+  }
 
   selectedFile = file;
   detected = null;
   resetResult();
   outputName = file.name.replace(/\.[^.]+$/, "") + ".xlsx";
 
-  const isZip = file.name.toLowerCase().endsWith(".zip");
+  const isZip = lowerName.endsWith(".zip");
   els.fileName.textContent = file.name;
   els.dbType.textContent = isZip ? "PEX-backup: öppnar…" : "Databastyp: identifierar…";
   els.fileInfo.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
@@ -208,6 +222,46 @@ els.fileInput.addEventListener("change", async () => {
   log(`Vald fil: ${file.name} (${file.size} byte). Ingen uppladdning sker.`);
   const buffer = await file.arrayBuffer();
   worker.postMessage({ type: "file", name: file.name, buffer }, [buffer]);
+}
+
+els.fileInput.addEventListener("change", () => {
+  handleSelectedFile(els.fileInput.files?.[0]);
+});
+
+["dragenter", "dragover"].forEach(type => {
+  els.dropZone.addEventListener(type, (event) => {
+    event.preventDefault();
+    if (!ready) return;
+    els.dropZone.classList.add("drag-over");
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+  });
+});
+
+["dragleave", "drop"].forEach(type => {
+  els.dropZone.addEventListener(type, (event) => {
+    event.preventDefault();
+    els.dropZone.classList.remove("drag-over");
+  });
+});
+
+els.dropZone.addEventListener("drop", (event) => {
+  if (!ready) return;
+  const files = event.dataTransfer?.files;
+  if (!files?.length) return;
+
+  if (files.length > 1) {
+    detected = null;
+    resetResult();
+    els.convertButton.disabled = true;
+    els.resetButton.disabled = false;
+    setProgress(0, "Välj en fil åt gången");
+    setFooter("error", "Fel");
+    els.detailText.textContent = "Släpp endast en databasfil eller PEX-backup åt gången.";
+    log(`Flera filer släpptes samtidigt: ${files.length}`);
+    return;
+  }
+
+  handleSelectedFile(files[0]);
 });
 
 els.convertButton.addEventListener("click", () => {
