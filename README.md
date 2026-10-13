@@ -20,6 +20,23 @@ Appen letar efter exakt en `.sqlite`, `.sqlite3` eller `.db3` i backupen. Den da
 
 Om ingen SQLite-databas hittas, eller om backupen innehåller flera sådana databaser, stoppas exporten med ett tydligt fel i stället för att appen gissar.
 
+## Bearbetad PEX-export
+
+För PEX-backuper i det nya SQLite-formatet skapas nu bladet `Undersökningar` före råtabellerna. En rad motsvarar ett radiografiprotokoll/projektion kopplat till en RIS-undersökning.
+
+Bladet innehåller:
+
+- RISName, undersökning, protokoll/projektion och ordning
+- acquisition system, stativ och kroppsdel
+- teknik och om AEC är standardval
+- dos, kV, mA, tid (s), mAs, fokus, filter och sensitivitet
+- Target EXI, gradation, contrast, spatial frequency, edge gain, Harmonis gain, noise reduction och amplification
+- OGP-ID för spårbarhet tillbaka till rådata
+
+För `1 pt` markeras AEC som standard. Fasta manuella mA-/tids-/mAs-värden lämnas tomma när de inte finns lagrade i protokollet. För `2 pt` visas lagrat mAs. För `3 pt` visas mA och tid samt beräknat mAs.
+
+De ursprungliga databastabellerna exporteras fortfarande som separata blad, så ingen råinformation tas bort.
+
 ## Säkerhetsmodell
 
 Databasfilen eller backupen väljs med webbläsarens File API och kopieras endast till Pyodides virtuella filsystem i den lokala webbläsarprocessen. Källfilen skickas inte till någon backend.
@@ -85,6 +102,6 @@ Webbversionen har verifierats i Microsoft Edge på en arbetsdator där extern CD
 - Resultat: lyckad export till `.xlsx`
 - Observerad konverteringstid: ca 3 sekunder
 
-PEX-backup i ZIP-format är implementerat men bör verifieras i den publicerade Pages-versionen innan ett testresultat läggs till här.
+PEX-backup i ZIP-format har verifierats i den publicerade Pages-versionen. Den bearbetade PEX-exporten med bladet `Undersökningar` är ny och bör verifieras mot kända protokoll, exempelvis Lungor, innan värdetolkningarna betraktas som slutligt validerade.
 
 Tiderna är endast praktiska observationer från dessa tester och ska inte ses som prestandagarantier.
