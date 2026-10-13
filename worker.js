@@ -87,6 +87,8 @@ with zipfile.ZipFile(archive_path, "r") as archive:
         )
 
     selected = candidates[0]
+    selected_name = selected.filename
+    selected_size = selected.file_size
     with archive.open(selected, "r") as source, open(target_path, "wb") as target:
         while True:
             chunk = source.read(1024 * 1024)
@@ -94,10 +96,10 @@ with zipfile.ZipFile(archive_path, "r") as archive:
                 break
             target.write(chunk)
 
-    {
-        "entry": selected.filename,
-        "size": selected.file_size,
-    }
+{
+    "entry": selected_name,
+    "size": selected_size,
+}
 `);
 
   const result = resultProxy.toJs({ dict_converter: Object.fromEntries });
