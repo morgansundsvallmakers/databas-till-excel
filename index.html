@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Databas → Excel</title>
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <main class="app-shell">
@@ -16,7 +16,7 @@
       </div>
       <div>
         <h1>Databas <span>→ Excel</span></h1>
-        <p>Konvertera SQLite/DB3 och Access/PEX direkt i webbläsaren.</p>
+        <p>Konvertera SQLite/DB3, Access/PEX och PEX-backuper direkt i webbläsaren.</p>
       </div>
     </header>
 
@@ -24,20 +24,20 @@
       <div class="privacy-dot"></div>
       <div>
         <strong>Filen lämnar inte din dator</strong>
-        <p>Databasen läses lokalt i webbläsaren. Ingen databasfil laddas upp till någon server.</p>
+        <p>Databasen eller backupen läses lokalt i webbläsaren. Ingen databasfil laddas upp till någon server.</p>
       </div>
     </section>
 
     <section class="card file-card">
       <div class="file-badge" id="fileBadge">DB</div>
       <div class="file-meta">
-        <span class="eyebrow">Databasfil</span>
+        <span class="eyebrow">Databasfil eller backup</span>
         <strong id="fileName">Ingen fil vald</strong>
         <span id="dbType">Databastyp: inte identifierad</span>
-        <small id="fileInfo">Välj .db3, .sqlite, .sqlite3, .mdb eller .accdb.</small>
+        <small id="fileInfo">Välj .db3, .sqlite, .sqlite3, .mdb, .accdb eller PEX-backup (.zip).</small>
       </div>
-      <button id="chooseButton" class="button secondary" type="button">Välj databasfil</button>
-      <input id="fileInput" type="file" accept=".db3,.sqlite,.sqlite3,.mdb,.accdb" hidden>
+      <button id="chooseButton" class="button secondary" type="button">Välj fil</button>
+      <input id="fileInput" type="file" accept=".db3,.sqlite,.sqlite3,.mdb,.accdb,.zip" hidden>
     </section>
 
     <section class="actions">
@@ -77,10 +77,10 @@
 
     <footer>
       <span id="footerStatus" class="ready-dot">● Redo</span>
-      <span>Pyodide + sqlite3 / access-parser + openpyxl</span>
+      <span>Pyodide + sqlite3 / access-parser / zipfile + openpyxl</span>
     </footer>
   </main>
 
-  <script src="app.js?v=3" type="module"></script>
+  <script src="app.js?v=4" type="module"></script>
 </body>
 </html>
