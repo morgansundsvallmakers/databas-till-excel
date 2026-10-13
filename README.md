@@ -8,7 +8,7 @@ Statisk webbapp för att exportera:
 - Access / äldre PEX (`.mdb`, `.accdb`)
 - PEX-backup (`.zip`) som innehåller en SQLite-databas
 
-till `.xlsx` direkt i webbläsaren.
+till `.xlsx` direkt i webbläsaren. Filer kan väljas med filväljaren eller dras och släppas direkt på filområdet.
 
 ## PEX-backup i ZIP-format
 
@@ -42,7 +42,7 @@ Workflowet bygger en kompakt statisk site och inkluderar endast de Pyodide-runti
 
 - `index.html` – gränssnitt
 - `styles.css` – visuell stil
-- `app.js` – UI, filhantering och module worker-start
+- `app.js` – UI, filval, drag-and-drop och module worker-start
 - `worker.js` – Pyodide/module Web Worker, lokal ZIP-hantering och paketladdning
 - `exporter.py` – gemensam Python-exportlogik
 - `.github/workflows/pages.yml` – bygger den kompakta runtime-mappen och deployar GitHub Pages
