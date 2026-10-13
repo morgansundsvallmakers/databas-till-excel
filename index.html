@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>Databas → Excel</title>
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
   <main class="app-shell">
@@ -28,13 +28,13 @@
       </div>
     </section>
 
-    <section class="card file-card">
+    <section class="card file-card" id="dropZone">
       <div class="file-badge" id="fileBadge">DB</div>
       <div class="file-meta">
         <span class="eyebrow">Databasfil eller backup</span>
         <strong id="fileName">Ingen fil vald</strong>
         <span id="dbType">Databastyp: inte identifierad</span>
-        <small id="fileInfo">Välj .db3, .sqlite, .sqlite3, .mdb, .accdb eller PEX-backup (.zip).</small>
+        <small id="fileInfo">Dra en fil hit eller välj .db3, .sqlite, .sqlite3, .mdb, .accdb eller PEX-backup (.zip).</small>
       </div>
       <button id="chooseButton" class="button secondary" type="button">Välj fil</button>
       <input id="fileInput" type="file" accept=".db3,.sqlite,.sqlite3,.mdb,.accdb,.zip" hidden>
@@ -81,6 +81,6 @@
     </footer>
   </main>
 
-  <script src="app.js?v=4" type="module"></script>
+  <script src="app.js?v=5" type="module"></script>
 </body>
 </html>
