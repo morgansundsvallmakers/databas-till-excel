@@ -62,7 +62,7 @@ function resetSelection() {
   els.fileBadge.textContent = "DB";
   els.fileName.textContent = "Ingen fil vald";
   els.dbType.textContent = "Databastyp: inte identifierad";
-  els.fileInfo.textContent = "Välj .db3, .sqlite, .sqlite3, .mdb eller .accdb.";
+  els.fileInfo.textContent = "Välj .db3, .sqlite, .sqlite3, .mdb, .accdb eller PEX-backup (.zip).";
   els.convertButton.disabled = true;
   els.resetButton.disabled = true;
   setProgress(0, ready ? "Redo" : "Initierar Python-miljön…");
@@ -98,9 +98,17 @@ function initWorker() {
 
     if (data.type === "detected") {
       detected = data.result;
-      els.fileBadge.textContent = detected.kind === "sqlite" ? "DB3" : "PEX";
+      els.fileBadge.textContent =
+        detected.source === "pex_zip" ? "PEX" :
+        detected.kind === "sqlite" ? "DB3" : "PEX";
       els.dbType.textContent = `Databastyp: ${detected.label} • lokal läsning`;
-      els.fileInfo.textContent = `${detected.tables} tabeller hittades • Resultat: ${outputName}`;
+
+      const sourceDetail = detected.archiveEntry
+        ? ` • Databas i backup: ${detected.archiveEntry}`
+        : "";
+      els.fileInfo.textContent =
+        `${detected.tables} tabeller hittades${sourceDetail} • Resultat: ${outputName}`;
+
       els.convertButton.disabled = false;
       els.resetButton.disabled = false;
       setProgress(0, "Redo att konvertera");
@@ -112,7 +120,7 @@ function initWorker() {
     if (data.type === "detectError") {
       detected = null;
       els.convertButton.disabled = true;
-      setProgress(0, "Databasformatet kunde inte identifieras");
+      setProgress(0, "Filen kunde inte läsas");
       setFooter("error", "Fel");
       els.detailText.textContent = "Öppna teknisk logg för detaljer.";
       log(`Identifieringsfel: ${data.message}`);
@@ -188,12 +196,13 @@ els.fileInput.addEventListener("change", async () => {
   resetResult();
   outputName = file.name.replace(/\.[^.]+$/, "") + ".xlsx";
 
+  const isZip = file.name.toLowerCase().endsWith(".zip");
   els.fileName.textContent = file.name;
-  els.dbType.textContent = "Databastyp: identifierar…";
+  els.dbType.textContent = isZip ? "PEX-backup: öppnar…" : "Databastyp: identifierar…";
   els.fileInfo.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
   els.convertButton.disabled = true;
   els.resetButton.disabled = false;
-  setProgress(0, "Läser filen lokalt…");
+  setProgress(0, isZip ? "Öppnar PEX-backup lokalt…" : "Läser filen lokalt…");
   setFooter("working", "Arbetar");
 
   log(`Vald fil: ${file.name} (${file.size} byte). Ingen uppladdning sker.`);
