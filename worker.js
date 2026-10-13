@@ -49,25 +49,107 @@ async function init() {
 }
 
 function cleanup() {
-  for (const path of [currentInput, currentOutput]) {
+  const paths = new Set([
+    currentInput,
+    currentOutput,
+    "/tmp/input.zip",
+    "/tmp/pex-backup.sqlite",
+  ]);
+  for (const path of paths) {
     try { pyodide.FS.unlink(path); } catch (_) {}
   }
 }
 
+function extractPexDatabaseFromZip() {
+  const resultProxy = pyodide.runPython(`
+import zipfile
+from pathlib import PurePosixPath
+
+archive_path = "/tmp/input.zip"
+target_path = "/tmp/pex-backup.sqlite"
+allowed_suffixes = {".sqlite", ".sqlite3", ".db3"}
+
+with zipfile.ZipFile(archive_path, "r") as archive:
+    candidates = [
+        info for info in archive.infolist()
+        if not info.is_dir()
+        and PurePosixPath(info.filename).suffix.lower() in allowed_suffixes
+    ]
+
+    if not candidates:
+        raise ValueError("PEX-backupen innehåller ingen SQLite-databas.")
+
+    if len(candidates) > 1:
+        names = ", ".join(info.filename for info in candidates)
+        raise ValueError(
+            "PEX-backupen innehåller flera SQLite-databaser. "
+            "Kan inte välja automatiskt: " + names
+        )
+
+    selected = candidates[0]
+    with archive.open(selected, "r") as source, open(target_path, "wb") as target:
+        while True:
+            chunk = source.read(1024 * 1024)
+            if not chunk:
+                break
+            target.write(chunk)
+
+    {
+        "entry": selected.filename,
+        "size": selected.file_size,
+    }
+`);
+
+  const result = resultProxy.toJs({ dict_converter: Object.fromEntries });
+  resultProxy.destroy();
+  return result;
+}
+
 async function handleFile(buffer, name) {
   cleanup();
-  const ext = "." + (name.split(".").pop() || "").toLowerCase();
-  currentInput = `/tmp/input${ext}`;
   currentOutput = "/tmp/output.xlsx";
-  pyodide.FS.writeFile(currentInput, new Uint8Array(buffer));
+
+  const ext = "." + (name.split(".").pop() || "").toLowerCase();
+  let detectExt = ext;
+  let source = "direct";
+  let archiveEntry = null;
 
   try {
-    const resultProxy = exporter.detect_database(currentInput, ext);
+    if (ext === ".zip") {
+      source = "pex_zip";
+      currentInput = "/tmp/input.zip";
+      pyodide.FS.writeFile(currentInput, new Uint8Array(buffer));
+
+      send("log", { message: "PEX-backup identifierad. Söker efter SQLite-databas…" });
+      const archive = extractPexDatabaseFromZip();
+      archiveEntry = archive.entry;
+      send("log", {
+        message: `SQLite-databas hittad i backupen: ${archiveEntry} (${archive.size} byte).`
+      });
+
+      try { pyodide.FS.unlink("/tmp/input.zip"); } catch (_) {}
+      currentInput = "/tmp/pex-backup.sqlite";
+      detectExt = ".sqlite";
+    } else {
+      currentInput = `/tmp/input${ext}`;
+      pyodide.FS.writeFile(currentInput, new Uint8Array(buffer));
+    }
+
+    const resultProxy = exporter.detect_database(currentInput, detectExt);
     const result = resultProxy.toJs({ dict_converter: Object.fromEntries });
     resultProxy.destroy();
+
+    if (source === "pex_zip") {
+      result.label = "PEX / SQLite";
+      result.source = "pex_zip";
+      result.archiveEntry = archiveEntry;
+    } else {
+      result.source = "direct";
+    }
+
     send("detected", { result });
   } catch (error) {
-    send("detectError", { message: String(error?.stack || error) });
+    send("detectError", { message: String(error?.message || error?.stack || error) });
   }
 }
 
