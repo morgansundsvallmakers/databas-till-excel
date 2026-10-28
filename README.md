@@ -6,7 +6,7 @@ Statisk webbapp för att exportera:
 
 - SQLite / DB3 (`.db3`, `.sqlite`, `.sqlite3`)
 - Access / äldre PEX (`.mdb`, `.accdb`)
-- PEX-backup (`.zip`) som innehåller en SQLite-databas
+- PEX-backup (`.zip`) som innehåller SQLite eller Access/MDB
 
 till `.xlsx` direkt i webbläsaren. Filer kan väljas med filväljaren eller dras och släppas direkt på filområdet.
 
@@ -14,11 +14,11 @@ till `.xlsx` direkt i webbläsaren. Filer kan väljas med filväljaren eller dra
 
 När en `.zip`-fil väljs läses backupen lokalt i Pyodide med Pythons inbyggda `zipfile`.
 
-Appen letar efter exakt en `.sqlite`, `.sqlite3` eller `.db3` i backupen. Den databasen packas upp till Pyodides virtuella filsystem och går sedan genom samma SQLite-export som vanliga DB3/SQLite-filer.
+Appen letar först efter exakt en `.sqlite`, `.sqlite3` eller `.db3` i backupen. Om ingen sådan finns letar den i stället efter en `.mdb` eller `.accdb`. Den hittade databasen packas upp till Pyodides virtuella filsystem och går sedan genom samma exportväg som om databasfilen hade valts direkt.
 
 Övriga filer i backupen, till exempel PEX-backupens små `.dat`-filer, används inte för Excel-exporten och packas inte upp.
 
-Om ingen SQLite-databas hittas, eller om backupen innehåller flera sådana databaser, stoppas exporten med ett tydligt fel i stället för att appen gissar.
+Om ingen stödd databasfil hittas, eller om backupen innehåller flera möjliga databaser av den valda typen, stoppas exporten med ett tydligt fel i stället för att appen gissar.
 
 ## Bearbetad PEX-export
 
