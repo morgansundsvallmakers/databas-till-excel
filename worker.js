@@ -54,6 +54,8 @@ function cleanup() {
     currentOutput,
     "/tmp/input.zip",
     "/tmp/pex-backup.sqlite",
+    "/tmp/pex-backup.mdb",
+    "/tmp/pex-backup.accdb",
   ]);
   for (const path of paths) {
     try { pyodide.FS.unlink(path); } catch (_) {}
@@ -66,29 +68,48 @@ import zipfile
 from pathlib import PurePosixPath
 
 archive_path = "/tmp/input.zip"
-target_path = "/tmp/pex-backup.sqlite"
-allowed_suffixes = {".sqlite", ".sqlite3", ".db3"}
+sqlite_suffixes = {".sqlite", ".sqlite3", ".db3"}
+access_suffixes = {".mdb", ".accdb"}
 
 with zipfile.ZipFile(archive_path, "r") as archive:
-    candidates = [
-        info for info in archive.infolist()
-        if not info.is_dir()
-        and PurePosixPath(info.filename).suffix.lower() in allowed_suffixes
+    files = [info for info in archive.infolist() if not info.is_dir()]
+    sqlite_candidates = [
+        info for info in files
+        if PurePosixPath(info.filename).suffix.lower() in sqlite_suffixes
+    ]
+    access_candidates = [
+        info for info in files
+        if PurePosixPath(info.filename).suffix.lower() in access_suffixes
     ]
 
-    if not candidates:
-        raise ValueError("PEX-backupen innehåller ingen SQLite-databas.")
+    if sqlite_candidates:
+        candidates = sqlite_candidates
+        kind = "sqlite"
+        target_path = "/tmp/pex-backup.sqlite"
+        detect_ext = ".sqlite"
+    elif access_candidates:
+        candidates = access_candidates
+        kind = "access"
+        suffix = PurePosixPath(access_candidates[0].filename).suffix.lower()
+        target_path = "/tmp/pex-backup.accdb" if suffix == ".accdb" else "/tmp/pex-backup.mdb"
+        detect_ext = suffix
+    else:
+        raise ValueError(
+            "PEX-backupen innehåller ingen stödd databasfil "
+            "(.sqlite, .sqlite3, .db3, .mdb eller .accdb)."
+        )
 
     if len(candidates) > 1:
         names = ", ".join(info.filename for info in candidates)
         raise ValueError(
-            "PEX-backupen innehåller flera SQLite-databaser. "
+            "PEX-backupen innehåller flera möjliga databasfiler. "
             "Kan inte välja automatiskt: " + names
         )
 
     selected = candidates[0]
     selected_name = selected.filename
     selected_size = selected.file_size
+
     with archive.open(selected, "r") as source, open(target_path, "wb") as target:
         while True:
             chunk = source.read(1024 * 1024)
@@ -99,6 +120,9 @@ with zipfile.ZipFile(archive_path, "r") as archive:
 {
     "entry": selected_name,
     "size": selected_size,
+    "kind": kind,
+    "target": target_path,
+    "detect_ext": detect_ext,
 }
 `);
 
@@ -122,16 +146,16 @@ async function handleFile(buffer, name) {
       currentInput = "/tmp/input.zip";
       pyodide.FS.writeFile(currentInput, new Uint8Array(buffer));
 
-      send("log", { message: "PEX-backup identifierad. Söker efter SQLite-databas…" });
+      send("log", { message: "PEX-backup identifierad. Söker efter databasfil…" });
       const archive = extractPexDatabaseFromZip();
       archiveEntry = archive.entry;
       send("log", {
-        message: `SQLite-databas hittad i backupen: ${archiveEntry} (${archive.size} byte).`
+        message: `${archive.kind === "sqlite" ? "SQLite" : "Access"}-databas hittad i backupen: ${archiveEntry} (${archive.size} byte).`
       });
 
       try { pyodide.FS.unlink("/tmp/input.zip"); } catch (_) {}
-      currentInput = "/tmp/pex-backup.sqlite";
-      detectExt = ".sqlite";
+      currentInput = archive.target;
+      detectExt = archive.detect_ext;
     } else {
       currentInput = `/tmp/input${ext}`;
       pyodide.FS.writeFile(currentInput, new Uint8Array(buffer));
@@ -142,7 +166,6 @@ async function handleFile(buffer, name) {
     resultProxy.destroy();
 
     if (source === "pex_zip") {
-      result.label = "PEX / SQLite";
       result.source = "pex_zip";
       result.archiveEntry = archiveEntry;
     } else {
